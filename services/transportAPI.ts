@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { Vehicle } from '../types';
 
-const API_BASE_URL = 'YOUR_IRISH_TRANSPORT_API_ENDPOINT';
+const API_BASE_URL = 'https://gtfsr.transportforireland.ie/v2';
 
 export const fetchTransportData = async (): Promise<Vehicle[]> => {
   try {

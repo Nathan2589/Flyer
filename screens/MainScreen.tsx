@@ -1,52 +1,119 @@
 // screens/MainScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { Vehicle } from '../types';
-import { fetchTransportData } from '../services/transportAPI';
+import { COLORS } from '../constants/colors';
+
+interface Bus {
+  id: string;
+  latitude: number;
+  longitude: number;
+  heading: number;
+  routeNumber: string;
+}
 
 export default function MainScreen() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [buses, setBuses] = useState<Bus[]>([]);
   const router = useRouter();
+  const mapRef = useRef<MapView>(null);
 
+  // Get user location
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
+      if (status !== 'granted') {
+        console.error('Permission denied');
+        return;
+      }
 
       const location = await Location.getCurrentPositionAsync({});
       setLocation(location);
+
+      // Initialize demo buses around user location
+      const demoBuses = generateDemoBuses(location.coords.latitude, location.coords.longitude);
+      setBuses(demoBuses);
     })();
   }, []);
+
+  // Simulate bus movements
+  useEffect(() => {
+    if (!location) return;
+
+    const interval = setInterval(() => {
+      setBuses(prevBuses => 
+        prevBuses.map(bus => ({
+          ...bus,
+          latitude: bus.latitude + (Math.random() - 0.5) * 0.0005,
+          longitude: bus.longitude + (Math.random() - 0.5) * 0.0005,
+          heading: Math.random() * 360,
+        }))
+      );
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [location]);
+
+  const generateDemoBuses = (centerLat: number, centerLng: number): Bus[] => {
+    return Array.from({ length: 5 }, (_, i) => ({
+      id: `bus-${i}`,
+      latitude: centerLat + (Math.random() - 0.5) * 0.01,
+      longitude: centerLng + (Math.random() - 0.5) * 0.01,
+      heading: Math.random() * 360,
+      routeNumber: `${Math.floor(Math.random() * 100)}`,
+    }));
+  };
 
   return (
     <View style={styles.container}>
       <MapView
+        ref={mapRef}
         style={styles.map}
-        initialRegion={{
-          latitude: 53.3498,
-          longitude: -6.2603,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+        userLocationUpdateInterval={5000}
+        userLocationAnnotationTitle="You are here"
+        tintColor="#07B965"  // Changes the user location marker color
+        userInterfaceStyle="light"
+        initialRegion={location ? {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        } : undefined}
       >
-        {vehicles.map((vehicle) => (
-          <Marker
-            key={vehicle.id}
-            coordinate={{
-              latitude: vehicle.latitude,
-              longitude: vehicle.longitude
+        {location && (
+          <Circle
+            center={{
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
             }}
-            title={vehicle.routeNumber}
-            description={vehicle.destination}
+            radius={1000}
+            fillColor="rgba(0, 122, 255, 0.1)"
+            strokeColor="rgba(0, 122, 255, 0.3)"
           />
+        )}
+        
+        {buses.map(bus => (
+          <Marker
+            key={bus.id}
+            coordinate={{
+              latitude: bus.latitude,
+              longitude: bus.longitude,
+            }}
+            rotation={bus.heading}
+            title={`Bus ${bus.routeNumber}`}
+            description={`Route ${bus.routeNumber}`}
+          >
+            <View style={styles.busMarker}>
+              <Text style={styles.busNumber}>{bus.routeNumber}</Text>
+            </View>
+          </Marker>
         ))}
       </MapView>
-      
-      {/* Navigation Buttons */}
+
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={styles.button}
@@ -84,7 +151,7 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    backgroundColor: '#007AFF',
+    backgroundColor: COLORS.PRIMARY,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
@@ -98,8 +165,20 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonText: {
-    color: 'white',
+    color: COLORS.WHITE,
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  busMarker: {
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: 15,
+    padding: 8,
+    borderWidth: 2,
+    borderColor: COLORS.WHITE,
+  },
+  busNumber: {
+    color: COLORS.WHITE,
+    fontWeight: 'bold',
+    fontSize: 12,
   },
 });

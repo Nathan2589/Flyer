@@ -1,6 +1,8 @@
 // app/_layout.tsx
 import { Stack } from 'expo-router';
 import { TransportProvider } from '../context/TransportContext';
+import { ThemeProvider } from '../context/ThemeContext';
+import { COLORS } from '../constants/colors';
 
 export default function Layout() {
   return (
@@ -8,18 +10,20 @@ export default function Layout() {
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#007AFF',
+            backgroundColor: COLORS.PRIMARY,
           },
-          headerTintColor: '#fff',
+          headerTintColor: COLORS.WHITE,
           headerTitleStyle: {
             fontWeight: 'bold',
           },
+          
         }}
+        
       >
         <Stack.Screen 
           name="main" 
           options={{ 
-            title: 'Transport Map',
+            title: 'FLYER',
             headerShown: true 
           }} 
         />
