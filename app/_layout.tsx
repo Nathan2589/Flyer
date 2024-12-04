@@ -2,17 +2,20 @@
 import { Stack } from 'expo-router';
 import { TransportProvider } from '../context/TransportContext';
 
-// You can define your route types here if needed
-export type RootStackParamList = {
-  main: undefined;
-  booking: undefined;
-  events: undefined;
-};
-
 export default function Layout() {
   return (
     <TransportProvider>
-      <Stack>
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#007AFF',
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
         <Stack.Screen 
           name="main" 
           options={{ 
